@@ -5,3 +5,5 @@ Build/
 Builds/
 Logs/
 UserSettings/
+*.csproj
+*.sln
