@@ -6,40 +6,52 @@ public class PlayerControllerSystem : MonoBehaviour
     // 현재 상호작용 중인지 확인
     private bool isInteracting = false;
 
-    // 점수를 획득하는 간격
-    [SerializeField] private float scoreInterval = 1f;
+    // 점수 시스템
+    [SerializeField] private ScoreSystem scoreSystem;
 
 
-    private void Start()
-    {
-        // 점수 획득 반복을 시작한다.
-        StartCoroutine(ScoreRoutine());
-    }
-
-
-    // Input System에서 Interaction 입력이 들어왔을 때 호출
+    // Interaction 입력이 들어왔을 때 호출
     public void OnInteraction()
     {
-        // 현재 상호작용 상태를 반전시킨다.
+        // 상호작용 상태를 반전시킨다.
         isInteracting = !isInteracting;
 
         Debug.Log("Player 상호작용 상태 : " + isInteracting);
+
+
+        // 상호작용이 시작되었을 때
+        if (isInteracting)
+        {
+            // Interaction 점수 획득 시작
+            StartCoroutine(InteractionScoreRoutine());
+        }
     }
 
 
-    // 상호작용 중일 때 일정 시간마다 점수를 획득하는 Coroutine
-    private IEnumerator ScoreRoutine()
+    // Interaction 중 일정 시간마다 점수를 획득한다.
+    private IEnumerator InteractionScoreRoutine()
     {
-        while (true)
+        while (isInteracting)
         {
-            // 점수 획득 간격만큼 기다린다.
-            yield return new WaitForSeconds(scoreInterval);
+            // ScoreSystem에 설정된 시간이 아니라
+            // PlayerControllerSystem에서 직접 시간을 정하지 않고,
+            // ScoreSystem의 설정값을 사용한다.
+            yield return new WaitForSeconds(
+                scoreSystem.GetInteractionScoreInterval()
+            );
 
-            // 현재 상호작용 중이라면 점수 획득
+            // 기다리는 동안 Interaction이 종료되지 않았다면 점수 획득
             if (isInteracting)
             {
-                Debug.Log("점수 획득");
+                scoreSystem.AddInteractionScore();
             }
         }
+    }
+
+
+    // 현재 상호작용 중인지 반환한다.
+    public bool IsInteracting()
+    {
+        return isInteracting;
     }
 }
