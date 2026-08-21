@@ -7,3 +7,4 @@ Logs/
 UserSettings/
 *.csproj
 *.sln
+.vs/
