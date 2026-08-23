@@ -8,13 +8,10 @@ public class GameManager : MonoBehaviour
     // System References
     // ==============================
 
-    // Score System
     [SerializeField] private ScoreSystem scoreSystem;
 
-    // Player Health System
     [SerializeField] private PlayerHealthSystem playerHealthSystem;
 
-    // Player Controller System
     [SerializeField] private PlayerControllerSystem playerControllerSystem;
 
 
@@ -22,8 +19,6 @@ public class GameManager : MonoBehaviour
     // Detection Settings
     // ==============================
 
-    // Decrease HP Range에 감지되었을 때
-    // 감소할 Health
     [SerializeField] private int detectionHealthDecreaseAmount = 10;
 
 
@@ -31,7 +26,6 @@ public class GameManager : MonoBehaviour
     // Interaction 보상 설정
     // ==============================
 
-    // Interaction 점수 획득 시 회복되는 Health
     [SerializeField] private int interactionHealthAmount = 1;
 
 
@@ -39,10 +33,8 @@ public class GameManager : MonoBehaviour
     // Game Over UI
     // ==============================
 
-    // Game Over UI 전체 오브젝트
     [SerializeField] private GameObject gameOverUI;
 
-    // Game Over 시 최종 점수를 표시하는 Text
     [SerializeField] private Text lastScoreText;
 
 
@@ -50,10 +42,8 @@ public class GameManager : MonoBehaviour
     // Game Clear UI
     // ==============================
 
-    // 목표 점수 달성 후 활성화할 버튼
     [SerializeField] private GameObject gameClearButton;
 
-    // 버튼 클릭 후 표시할 Game Clear UI
     [SerializeField] private GameObject gameClearUI;
 
 
@@ -68,10 +58,8 @@ public class GameManager : MonoBehaviour
     // Game State
     // ==============================
 
-    // Game Over 상태
     private bool isGameOver = false;
 
-    // Game Clear 상태
     private bool isGameClear = false;
 
 
@@ -113,13 +101,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // 게임이 끝난 상태라면 목표 점수를 확인하지 않는다.
+        // 게임이 종료된 상태라면 확인하지 않는다.
         if (isGameOver || isGameClear)
         {
             return;
         }
 
-        // 목표 점수 도달 여부 확인
+        // 현재 점수가 목표 점수 이상인지 확인한다.
         if (scoreSystem.HasReachedTargetScore())
         {
             GameClear();
@@ -145,7 +133,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Interaction 보상 Coroutine 시작
+        // Interaction 보상 시작
         interactionRewardRoutine =
             StartCoroutine(InteractionRewardRoutine());
     }
@@ -157,7 +145,6 @@ public class GameManager : MonoBehaviour
 
     public void EndInteraction()
     {
-        // 실행 중인 Coroutine이 있다면 중지한다.
         if (interactionRewardRoutine != null)
         {
             StopCoroutine(interactionRewardRoutine);
@@ -195,7 +182,6 @@ public class GameManager : MonoBehaviour
             );
         }
 
-        // Coroutine 참조 초기화
         interactionRewardRoutine = null;
     }
 
@@ -212,8 +198,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Interaction 중이 아니라면
-        // Detection 결과를 처리하지 않는다.
+        // Interaction 중이 아니라면 처리하지 않는다.
         if (!playerControllerSystem.IsInteracting())
         {
             return;
@@ -221,10 +206,6 @@ public class GameManager : MonoBehaviour
 
         switch (detectionType)
         {
-            // ==============================
-            // Decrease Health
-            // ==============================
-
             case DetectionType.DecreaseHealth:
 
                 // Health 감소
@@ -241,10 +222,6 @@ public class GameManager : MonoBehaviour
 
                 break;
 
-
-            // ==============================
-            // Kill
-            // ==============================
 
             case DetectionType.Kill:
 
@@ -337,7 +314,10 @@ public class GameManager : MonoBehaviour
             gameClearButton.SetActive(true);
         }
 
-        Debug.Log("Game Clear");
+        Debug.Log(
+            "Game Clear : " +
+            scoreSystem.GetCurrentScore()
+        );
     }
 
 
@@ -345,7 +325,6 @@ public class GameManager : MonoBehaviour
     // Game Clear UI
     // ==============================
 
-    // Game Clear 버튼을 눌렀을 때 호출
     public void ShowGameClearUI()
     {
         if (!isGameClear)
@@ -365,7 +344,7 @@ public class GameManager : MonoBehaviour
             gameClearButton.SetActive(false);
         }
 
-        // 버튼을 눌렀을 때 게임 정지
+        // 버튼 클릭 후 게임 정지
         Time.timeScale = 0f;
     }
 
@@ -390,8 +369,6 @@ public class GameManager : MonoBehaviour
     // System 반환
     // ==============================
 
-    // EnemyDetectionSystem에서
-    // Player의 Interaction 상태를 확인할 수 있도록 반환한다.
     public PlayerControllerSystem GetPlayerControllerSystem()
     {
         return playerControllerSystem;
