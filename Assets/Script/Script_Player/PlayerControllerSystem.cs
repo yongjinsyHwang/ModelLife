@@ -1,55 +1,88 @@
 using UnityEngine;
-using System.Collections;
 
 public class PlayerControllerSystem : MonoBehaviour
 {
     // 현재 상호작용 중인지 확인
     private bool isInteracting = false;
 
-    // 점수 시스템
-    [SerializeField] private ScoreSystem scoreSystem;
+
+    // GameManager
+    [SerializeField] private GameManager gameManager;
 
 
-    // Interaction 입력이 들어왔을 때 호출
+    // ==============================
+    // Interaction 입력
+    // ==============================
+
+    // Input System의 Interaction 입력이 들어왔을 때 호출
     public void OnInteraction()
     {
-        // 상호작용 상태를 반전시킨다.
-        isInteracting = !isInteracting;
+        // 게임 오버 상태에서는 입력을 무시
+        if (gameManager.IsGameOver())
+        {
+            return;
+        }
 
-        Debug.Log("Player 상호작용 상태 : " + isInteracting);
 
-
-        // 상호작용이 시작되었을 때
+        // 현재 상호작용 중이라면 종료
         if (isInteracting)
         {
-            // Interaction 점수 획득 시작
-            StartCoroutine(InteractionScoreRoutine());
+            EndInteraction();
         }
-    }
-
-
-    // Interaction 중 일정 시간마다 점수를 획득한다.
-    private IEnumerator InteractionScoreRoutine()
-    {
-        while (isInteracting)
+        else
         {
-            // ScoreSystem에 설정된 시간이 아니라
-            // PlayerControllerSystem에서 직접 시간을 정하지 않고,
-            // ScoreSystem의 설정값을 사용한다.
-            yield return new WaitForSeconds(
-                scoreSystem.GetInteractionScoreInterval()
-            );
-
-            // 기다리는 동안 Interaction이 종료되지 않았다면 점수 획득
-            if (isInteracting)
-            {
-                scoreSystem.AddInteractionScore();
-            }
+            StartInteraction();
         }
     }
 
 
-    // 현재 상호작용 중인지 반환한다.
+    // ==============================
+    // Interaction 시작
+    // ==============================
+
+    private void StartInteraction()
+    {
+        isInteracting = true;
+
+        Debug.Log(
+            "Player 상호작용 상태 : True"
+        );
+
+
+        // GameManager에 시작 전달
+        gameManager.StartInteraction();
+    }
+
+
+    // ==============================
+    // Interaction 종료
+    // ==============================
+
+    public void EndInteraction()
+    {
+        // 이미 종료 상태라면 실행하지 않는다.
+        if (!isInteracting)
+        {
+            return;
+        }
+
+
+        isInteracting = false;
+
+        Debug.Log(
+            "Player 상호작용 상태 : False"
+        );
+
+
+        // GameManager에 종료 전달
+        gameManager.EndInteraction();
+    }
+
+
+    // ==============================
+    // 상태 확인
+    // ==============================
+
     public bool IsInteracting()
     {
         return isInteracting;
