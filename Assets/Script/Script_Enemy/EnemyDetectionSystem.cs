@@ -2,18 +2,21 @@ using UnityEngine;
 
 public class EnemyDetectionSystem : MonoBehaviour
 {
-    // Player의 HP를 감소시키는 감지 범위
+    // Player의 Health를 감소시키는 감지 범위
     [SerializeField] private float decreaseHpRange = 5f;
 
-    // Player를 죽이는 감지 범위
+    // Player를 즉시 Game Over시키는 감지 범위
     [SerializeField] private float killRange = 2f;
 
+    // GameManager
+    [SerializeField] private GameManager gameManager;
 
-    // 현재 Kill Raycast가 Player를 감지하고 있는지
-    private bool isKillDetecting = false;
 
     // 현재 Decrease HP Raycast가 Player를 감지하고 있는지
     private bool isDecreaseHpDetecting = false;
+
+    // 현재 Kill Raycast가 Player를 감지하고 있는지
+    private bool isKillDetecting = false;
 
 
     private void Update()
@@ -22,13 +25,12 @@ public class EnemyDetectionSystem : MonoBehaviour
     }
 
 
-    // 두 방향의 Raycast를 이용해 Player를 감지한다.
     private void DetectPlayer()
     {
-        // Enemy가 바라보는 정면 방향
+        // Enemy 정면 방향
         Vector3 forwardDirection = transform.forward;
 
-        // Enemy의 왼쪽 90도 방향
+        // Enemy 왼쪽 90도 방향
         Vector3 leftDirection = -transform.right;
 
 
@@ -43,26 +45,44 @@ public class EnemyDetectionSystem : MonoBehaviour
             killRange
         );
 
-        // Raycast가 Player를 새롭게 감지했을 때
-        if (killDetected && killHit.collider.gameObject.name == "Player")
+
+        // 현재 Kill Range에 Player가 있는지 확인
+        bool isPlayerInKillRange =
+            killDetected &&
+            killHit.collider.gameObject.name == "Player";
+
+
+        if (isPlayerInKillRange)
         {
+            // 처음 들어왔을 때 GameManager에 전달
             if (!isKillDetecting)
             {
-                Debug.Log("Player가 Kill Range에 감지되었습니다.");
+                gameManager.OnEnemyDetection(
+                    GameManager.DetectionType.Kill
+                );
             }
 
-            // 현재 Player를 감지하고 있는 상태
             isKillDetecting = true;
         }
         else
         {
-            // Player 감지가 끊긴 상태
             isKillDetecting = false;
         }
 
 
+        // Kill Range에 Player가 이미 있는 상태라면
+        // Interaction이 새롭게 True가 되었을 때도 확인
+        if (isPlayerInKillRange &&
+            playerIsInteracting())
+        {
+            gameManager.OnEnemyDetection(
+                GameManager.DetectionType.Kill
+            );
+        }
+
+
         // ==============================
-        // Decrease HP Range
+        // Decrease Health Range
         // ==============================
 
         bool decreaseHpDetected = Physics.Raycast(
@@ -72,27 +92,40 @@ public class EnemyDetectionSystem : MonoBehaviour
             decreaseHpRange
         );
 
-        // Raycast가 Player를 새롭게 감지했을 때
-        if (decreaseHpDetected &&
-            decreaseHpHit.collider.gameObject.name == "Player")
+
+        bool isPlayerInDecreaseHpRange =
+            decreaseHpDetected &&
+            decreaseHpHit.collider.gameObject.name == "Player";
+
+
+        if (isPlayerInDecreaseHpRange)
         {
+            // 처음 들어왔을 때만 전달
             if (!isDecreaseHpDetecting)
             {
-                Debug.Log("Player가 Decrease HP Range에 감지되었습니다.");
+                gameManager.OnEnemyDetection(
+                    GameManager.DetectionType.DecreaseHealth
+                );
             }
 
-            // 현재 Player를 감지하고 있는 상태
             isDecreaseHpDetecting = true;
         }
         else
         {
-            // Player 감지가 끊긴 상태
             isDecreaseHpDetecting = false;
         }
     }
 
 
-    // Scene 창에서 Raycast의 방향과 범위를 확인한다.
+    // Player가 현재 Interaction 중인지 확인한다.
+    private bool playerIsInteracting()
+    {
+        return gameManager.GetPlayerControllerSystem()
+            .IsInteracting();
+    }
+
+
+    // Scene에서 Raycast를 확인
     private void OnDrawGizmos()
     {
         // Kill Range
@@ -104,7 +137,7 @@ public class EnemyDetectionSystem : MonoBehaviour
         );
 
 
-        // Decrease HP Range
+        // Decrease Health Range
         Gizmos.color = Color.yellow;
 
         Gizmos.DrawRay(
