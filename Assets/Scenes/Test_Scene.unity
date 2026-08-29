@@ -154,7 +154,7 @@ MonoBehaviour:
   interactionScoreAmount: 5
   interactionScoreInterval: 4
   currentScore: 0
-  targetScore: 100
+  targetScore: 30
   currentScoreText: {fileID: 2090129413}
   targetScoreText: {fileID: 1496288921}
 --- !u!114 &1159509
@@ -2537,6 +2537,10 @@ PrefabInstance:
       propertyPath: gameManager
       value: 
       objectReference: {fileID: 1159509}
+    - target: {fileID: 7299243371945578481, guid: 6352bb87524da6940a91295b94ccd506, type: 3}
+      propertyPath: normalColor.a
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2595,6 +2599,10 @@ PrefabInstance:
       value: Teacher
       objectReference: {fileID: 0}
     - target: {fileID: 5047523606690482101, guid: bf3226a8d4f3b28488014d941e5807ec, type: 3}
+      propertyPath: maxTurnTime
+      value: 4.86
+      objectReference: {fileID: 0}
+    - target: {fileID: 5047523606690482101, guid: bf3226a8d4f3b28488014d941e5807ec, type: 3}
       propertyPath: timeStatusUI
       value: 
       objectReference: {fileID: 1424394807}
@@ -2613,6 +2621,10 @@ PrefabInstance:
     - target: {fileID: 5047523606690482101, guid: bf3226a8d4f3b28488014d941e5807ec, type: 3}
       propertyPath: minTurnDuration
       value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5047523606690482101, guid: bf3226a8d4f3b28488014d941e5807ec, type: 3}
+      propertyPath: minReturnDuration
+      value: 1.03
       objectReference: {fileID: 0}
     - target: {fileID: 5047523606690482101, guid: bf3226a8d4f3b28488014d941e5807ec, type: 3}
       propertyPath: detectionTurnTimeText
