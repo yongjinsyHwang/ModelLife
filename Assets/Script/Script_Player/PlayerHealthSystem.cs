@@ -4,20 +4,11 @@ using System.Collections;
 
 public class PlayerHealthSystem : MonoBehaviour
 {
-    // ==============================
-    // Health 설정
-    // ==============================
-
     // 최대 체력
     [SerializeField] private int maxHealth = 100;
 
     // 현재 체력
     [SerializeField] private int currentHealth;
-
-
-    // ==============================
-    // 지속 감소 설정
-    // ==============================
 
     // 일정 시간마다 감소할 체력
     [SerializeField] private int passiveDecreaseAmount = 10;
@@ -26,17 +17,8 @@ public class PlayerHealthSystem : MonoBehaviour
     [SerializeField] private float passiveDecreaseInterval = 1f;
 
 
-    // ==============================
-    // UI
-    // ==============================
-
     // 현재 체력 UI
     [SerializeField] private Image currentHealthImage;
-
-
-    // ==============================
-    // GameManager
-    // ==============================
 
     // GameManager
     [SerializeField] private GameManager gameManager;
@@ -185,5 +167,7 @@ public class PlayerHealthSystem : MonoBehaviour
         // 현재 체력에 맞춰 체력바 표시
         currentHealthImage.fillAmount =
             healthPercent;
+
+        /*currentHealthImage.fillAmount = (float)currentHealth / maxHealth;*/
     }
 }
