@@ -6,22 +6,29 @@ public class PlayerControllerSystem : MonoBehaviour
     // Interaction
     // ==============================
 
-    // 현재 상호작용 중인지 확인
     private bool isInteracting = false;
 
-    // GameManager
+
+    // ==============================
+    // Game Manager
+    // ==============================
+
     [SerializeField] private GameManager gameManager;
+
+
+    // ==============================
+    // Animation System
+    // ==============================
+
+    [SerializeField] private PlayerAnimationSystem animationSystem;
 
 
     // ==============================
     // Player 색상
     // ==============================
 
-    // Interaction이 true일 때 사용할 색상
     [SerializeField] private Color interactingColor = Color.cyan;
 
-
-    // Interaction이 false일 때 사용할 원래 색상
     [SerializeField] private Color normalColor = Color.white;
 
 
@@ -29,12 +36,18 @@ public class PlayerControllerSystem : MonoBehaviour
     private Renderer[] playerRenderers;
 
 
+    // ==============================
+    // Awake
+    // ==============================
+
     private void Awake()
     {
         // Player 자신과 자식 오브젝트의 Renderer를 모두 가져온다.
-        playerRenderers = GetComponentsInChildren<Renderer>();
+        playerRenderers =
+            GetComponentsInChildren<Renderer>();
 
-        // 시작 시 기본 색상 적용
+
+        // 시작 시 기본 색상
         SetPlayerColor(normalColor);
     }
 
@@ -43,10 +56,16 @@ public class PlayerControllerSystem : MonoBehaviour
     // Interaction 입력
     // ==============================
 
-    // Input System의 Interaction 입력이 들어왔을 때 호출
     public void OnInteraction()
     {
-        // Game Over 또는 Game Clear 상태라면 입력하지 않는다.
+        // GameManager가 없으면 종료
+        if (gameManager == null)
+        {
+            return;
+        }
+
+
+        // Game Over / Clear 상태에서는 입력하지 않는다.
         if (gameManager.IsGameOver() ||
             gameManager.IsGameClear())
         {
@@ -54,7 +73,7 @@ public class PlayerControllerSystem : MonoBehaviour
         }
 
 
-        // 현재 상태에 따라 Interaction 시작 또는 종료
+        // 상태에 따라 시작 / 종료
         if (isInteracting)
         {
             EndInteraction();
@@ -74,12 +93,24 @@ public class PlayerControllerSystem : MonoBehaviour
     {
         isInteracting = true;
 
-        // Player 색상을 청록색으로 변경
+
+        // Player 색상 변경
         SetPlayerColor(interactingColor);
 
-        Debug.Log("Player 상호작용 상태 : True");
 
-        // GameManager에 Interaction 시작 전달
+        Debug.Log(
+            "Player 상호작용 상태 : True"
+        );
+
+
+        // Joke 애니메이션 재생
+        if (animationSystem != null)
+        {
+            animationSystem.PlayJoke();
+        }
+
+
+        // GameManager에 시작 전달
         gameManager.StartInteraction();
     }
 
@@ -90,21 +121,31 @@ public class PlayerControllerSystem : MonoBehaviour
 
     public void EndInteraction()
     {
-        // 이미 종료된 상태라면 실행하지 않는다.
+        // 이미 종료되어 있다면 실행하지 않는다.
         if (!isInteracting)
         {
             return;
         }
 
+
+        // 가장 먼저 상태를 false로 변경
         isInteracting = false;
 
-        // Player 색상을 원래 색상으로 복구
+
+        // 색상 원복
         SetPlayerColor(normalColor);
 
-        Debug.Log("Player 상호작용 상태 : False");
 
-        // GameManager에 Interaction 종료 전달
-        gameManager.EndInteraction();
+        Debug.Log(
+            "Player 상호작용 상태 : False"
+        );
+
+
+        // GameManager에 종료 전달
+        if (gameManager != null)
+        {
+            gameManager.EndInteraction();
+        }
     }
 
 
@@ -122,18 +163,21 @@ public class PlayerControllerSystem : MonoBehaviour
 
         foreach (Renderer playerRenderer in playerRenderers)
         {
-            // Renderer의 모든 Material 색상을 변경
             foreach (Material material in playerRenderer.materials)
             {
-                // 일반적인 Standard 계열 Shader
                 if (material.HasProperty("_BaseColor"))
                 {
-                    material.SetColor("_BaseColor", color);
+                    material.SetColor(
+                        "_BaseColor",
+                        color
+                    );
                 }
-                // 구형 Standard Shader 대응
                 else if (material.HasProperty("_Color"))
                 {
-                    material.SetColor("_Color", color);
+                    material.SetColor(
+                        "_Color",
+                        color
+                    );
                 }
             }
         }

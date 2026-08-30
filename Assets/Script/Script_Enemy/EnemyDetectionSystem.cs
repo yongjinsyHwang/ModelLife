@@ -2,147 +2,322 @@ using UnityEngine;
 
 public class EnemyDetectionSystem : MonoBehaviour
 {
-    // Player의 Health를 감소시키는 감지 범위
-    [SerializeField] private float decreaseHpRange = 5f;
+    // ==========================================
+    // Game Manager
+    // ==========================================
 
-    // Player를 즉시 Game Over시키는 감지 범위
-    [SerializeField] private float killRange = 2f;
-
-    // GameManager
     [SerializeField] private GameManager gameManager;
 
 
-    // 현재 Decrease HP Raycast가 Player를 감지하고 있는지
-    private bool isDecreaseHpDetecting = false;
+    // ==========================================
+    // Player Tag
+    // ==========================================
 
-    // 현재 Kill Raycast가 Player를 감지하고 있는지
-    private bool isKillDetecting = false;
+    [SerializeField] private string playerTag = "Player";
 
+
+    // ==========================================
+    // Raycast 시작 위치
+    // ==========================================
+
+    [SerializeField] private Transform raycastOrigin;
+
+
+    // ==========================================
+    // Kill Range
+    // ==========================================
+
+    [SerializeField] private float killRange = 5f;
+
+
+    // ==========================================
+    // Health 감소 Range
+    // ==========================================
+
+    [SerializeField] private float decreaseHealthRange = 3f;
+
+
+    // ==========================================
+    // Detection 상태
+    // ==========================================
+
+    // Health 감소를 이미 처리했는지
+    private bool hasDetectedDecreaseHealth = false;
+
+    // Kill을 이미 처리했는지
+    private bool hasDetectedKill = false;
+
+
+    // ==========================================
+    // Update
+    // ==========================================
 
     private void Update()
     {
-        DetectPlayer();
+        // 필요한 참조가 없다면 종료
+        if (gameManager == null)
+        {
+            return;
+        }
+
+
+        PlayerControllerSystem playerController =
+            gameManager.GetPlayerControllerSystem();
+
+
+        if (playerController == null)
+        {
+            return;
+        }
+
+
+        // ==========================================
+        // Interaction 중이 아니면
+        // 두 Raycast 모두 검사하지 않는다.
+        // ==========================================
+
+        if (!playerController.IsInteracting())
+        {
+            hasDetectedKill = false;
+            hasDetectedDecreaseHealth = false;
+
+            return;
+        }
+
+
+        // Interaction 중일 때만 감지
+        DetectKillRange();
+
+        DetectDecreaseHealthRange();
     }
 
 
-    private void DetectPlayer()
+    // ==========================================
+    // Kill Range Detection
+    // ==========================================
+
+    private void DetectKillRange()
     {
-        // Enemy 정면 방향
-        Vector3 forwardDirection = transform.forward;
-
-        // Enemy 왼쪽 90도 방향
-        Vector3 leftDirection = -transform.right;
+        Vector3 origin =
+            GetRaycastOrigin();
 
 
-        // ==============================
-        // Kill Range
-        // ==============================
-
-        bool killDetected = Physics.Raycast(
-            transform.position,
-            forwardDirection,
-            out RaycastHit killHit,
-            killRange
-        );
+        Vector3 direction =
+            transform.forward;
 
 
-        // 현재 Kill Range에 Player가 있는지 확인
-        bool isPlayerInKillRange =
-            killDetected &&
-            killHit.collider.gameObject.name == "Player";
-
-
-        if (isPlayerInKillRange)
-        {
-            // 처음 들어왔을 때 GameManager에 전달
-            if (!isKillDetecting)
-            {
-                gameManager.OnEnemyDetection(
-                    GameManager.DetectionType.Kill
-                );
-            }
-
-            isKillDetecting = true;
-        }
-        else
-        {
-            isKillDetecting = false;
-        }
-
-
-        // Kill Range에 Player가 이미 있는 상태라면
-        // Interaction이 새롭게 True가 되었을 때도 확인
-        if (isPlayerInKillRange &&
-            playerIsInteracting())
-        {
-            gameManager.OnEnemyDetection(
-                GameManager.DetectionType.Kill
+        bool detected =
+            Physics.Raycast(
+                origin,
+                direction,
+                out RaycastHit hit,
+                killRange
             );
+
+
+        // 감지되지 않으면 다음 감지를 허용
+        if (!detected)
+        {
+            hasDetectedKill = false;
+
+            return;
         }
 
 
-        // ==============================
-        // Decrease Health Range
-        // ==============================
+        // Player Tag 확인
+        if (!hit.collider.CompareTag(playerTag))
+        {
+            hasDetectedKill = false;
 
-        bool decreaseHpDetected = Physics.Raycast(
-            transform.position,
-            leftDirection,
-            out RaycastHit decreaseHpHit,
-            decreaseHpRange
+            return;
+        }
+
+
+        // 이미 처리했다면 중복 실행하지 않는다.
+        if (hasDetectedKill)
+        {
+            return;
+        }
+
+
+        hasDetectedKill = true;
+
+
+        Debug.Log(
+            "Kill Range에서 Player 감지"
         );
 
 
-        bool isPlayerInDecreaseHpRange =
-            decreaseHpDetected &&
-            decreaseHpHit.collider.gameObject.name == "Player";
-
-
-        if (isPlayerInDecreaseHpRange)
-        {
-            // 처음 들어왔을 때만 전달
-            if (!isDecreaseHpDetecting)
-            {
-                gameManager.OnEnemyDetection(
-                    GameManager.DetectionType.DecreaseHealth
-                );
-            }
-
-            isDecreaseHpDetecting = true;
-        }
-        else
-        {
-            isDecreaseHpDetecting = false;
-        }
+        gameManager.OnEnemyDetection(
+            GameManager.DetectionType.Kill
+        );
     }
 
 
-    // Player가 현재 Interaction 중인지 확인한다.
-    private bool playerIsInteracting()
+    // ==========================================
+    // Health 감소 Range Detection
+    // ==========================================
+
+    private void DetectDecreaseHealthRange()
     {
-        return gameManager.GetPlayerControllerSystem()
-            .IsInteracting();
+        Vector3 origin =
+            GetRaycastOrigin();
+
+
+        // Enemy 기준 왼쪽 90도
+        Vector3 direction =
+            Quaternion.Euler(
+                0f,
+                -90f,
+                0f
+            ) * transform.forward;
+
+
+        bool detected =
+            Physics.Raycast(
+                origin,
+                direction,
+                out RaycastHit hit,
+                decreaseHealthRange
+            );
+
+
+        // 감지되지 않으면 다시 감지 가능
+        if (!detected)
+        {
+            hasDetectedDecreaseHealth = false;
+
+            return;
+        }
+
+
+        // Player Tag 확인
+        if (!hit.collider.CompareTag(playerTag))
+        {
+            hasDetectedDecreaseHealth = false;
+
+            return;
+        }
+
+
+        // 이미 Health 감소를 처리했다면 종료
+        if (hasDetectedDecreaseHealth)
+        {
+            return;
+        }
+
+
+        // 다시 한 번 Interaction 상태 확인
+        if (!PlayerIsInteracting())
+        {
+            hasDetectedDecreaseHealth = false;
+
+            return;
+        }
+
+
+        hasDetectedDecreaseHealth = true;
+
+
+        Debug.Log(
+            "Health 감소 Range에서 Player 감지"
+        );
+
+
+        gameManager.OnEnemyDetection(
+            GameManager.DetectionType.DecreaseHealth
+        );
     }
 
 
-    // Scene에서 Raycast를 확인
+    // ==========================================
+    // Player Interaction 확인
+    // ==========================================
+
+    private bool PlayerIsInteracting()
+    {
+        if (gameManager == null)
+        {
+            return false;
+        }
+
+
+        PlayerControllerSystem playerController =
+            gameManager.GetPlayerControllerSystem();
+
+
+        if (playerController == null)
+        {
+            return false;
+        }
+
+
+        return playerController.IsInteracting();
+    }
+
+
+    // ==========================================
+    // Raycast 시작 위치
+    // ==========================================
+
+    private Vector3 GetRaycastOrigin()
+    {
+        if (raycastOrigin != null)
+        {
+            return raycastOrigin.position;
+        }
+
+
+        return transform.position;
+    }
+
+
+    // ==========================================
+    // Scene View Raycast 표시
+    // ==========================================
+
     private void OnDrawGizmos()
     {
+        Vector3 origin =
+            GetRaycastOrigin();
+
+
+        // ------------------------------------------
         // Kill Range
-        Gizmos.color = Color.red;
+        // 정면
+        // ------------------------------------------
+
+        Gizmos.color =
+            Color.red;
+
 
         Gizmos.DrawRay(
-            transform.position,
+            origin,
             transform.forward * killRange
         );
 
 
-        // Decrease Health Range
-        Gizmos.color = Color.yellow;
+        // ------------------------------------------
+        // Health 감소 Range
+        // 왼쪽 90도
+        // ------------------------------------------
+
+        Vector3 decreaseHealthDirection =
+            Quaternion.Euler(
+                0f,
+                -90f,
+                0f
+            ) * transform.forward;
+
+
+        Gizmos.color =
+            Color.yellow;
+
 
         Gizmos.DrawRay(
-            transform.position,
-            -transform.right * decreaseHpRange
+            origin,
+            decreaseHealthDirection *
+            decreaseHealthRange
         );
     }
 }
