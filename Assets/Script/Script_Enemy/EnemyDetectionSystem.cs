@@ -20,7 +20,13 @@ public class EnemyDetectionSystem : MonoBehaviour
     // Raycast 시작 위치
     // ==========================================
 
+    // 지정하지 않으면 Enemy 자신의 위치 사용
     [SerializeField] private Transform raycastOrigin;
+
+    // Raycast 시작 높이 보정값
+    // +값 = 위로
+    // -값 = 아래로
+    [SerializeField] private float raycastHeightOffset = 0f;
 
 
     // ==========================================
@@ -41,10 +47,8 @@ public class EnemyDetectionSystem : MonoBehaviour
     // Detection 상태
     // ==========================================
 
-    // Health 감소를 이미 처리했는지
     private bool hasDetectedDecreaseHealth = false;
 
-    // Kill을 이미 처리했는지
     private bool hasDetectedKill = false;
 
 
@@ -54,7 +58,6 @@ public class EnemyDetectionSystem : MonoBehaviour
 
     private void Update()
     {
-        // 필요한 참조가 없다면 종료
         if (gameManager == null)
         {
             return;
@@ -72,11 +75,16 @@ public class EnemyDetectionSystem : MonoBehaviour
 
 
         // ==========================================
-        // Interaction 중이 아니면
-        // 두 Raycast 모두 검사하지 않는다.
+        // Interaction 상태
         // ==========================================
 
-        if (!playerController.IsInteracting())
+        bool currentInteractionState =
+            playerController.IsInteracting();
+
+
+        // Interaction 중이 아니면
+        // 두 Raycast 모두 검사하지 않는다.
+        if (!currentInteractionState)
         {
             hasDetectedKill = false;
             hasDetectedDecreaseHealth = false;
@@ -85,7 +93,10 @@ public class EnemyDetectionSystem : MonoBehaviour
         }
 
 
-        // Interaction 중일 때만 감지
+        // ==========================================
+        // Raycast 감지
+        // ==========================================
+
         DetectKillRange();
 
         DetectDecreaseHealthRange();
@@ -102,6 +113,7 @@ public class EnemyDetectionSystem : MonoBehaviour
             GetRaycastOrigin();
 
 
+        // Enemy 정면
         Vector3 direction =
             transform.forward;
 
@@ -115,11 +127,9 @@ public class EnemyDetectionSystem : MonoBehaviour
             );
 
 
-        // 감지되지 않으면 다음 감지를 허용
         if (!detected)
         {
             hasDetectedKill = false;
-
             return;
         }
 
@@ -128,12 +138,11 @@ public class EnemyDetectionSystem : MonoBehaviour
         if (!hit.collider.CompareTag(playerTag))
         {
             hasDetectedKill = false;
-
             return;
         }
 
 
-        // 이미 처리했다면 중복 실행하지 않는다.
+        // 이미 처리한 Kill이면 중복 방지
         if (hasDetectedKill)
         {
             return;
@@ -144,7 +153,7 @@ public class EnemyDetectionSystem : MonoBehaviour
 
 
         Debug.Log(
-            "Kill Range에서 Player 감지"
+            "Kill Raycast : Player 감지"
         );
 
 
@@ -182,11 +191,9 @@ public class EnemyDetectionSystem : MonoBehaviour
             );
 
 
-        // 감지되지 않으면 다시 감지 가능
         if (!detected)
         {
             hasDetectedDecreaseHealth = false;
-
             return;
         }
 
@@ -195,23 +202,21 @@ public class EnemyDetectionSystem : MonoBehaviour
         if (!hit.collider.CompareTag(playerTag))
         {
             hasDetectedDecreaseHealth = false;
-
             return;
         }
 
 
-        // 이미 Health 감소를 처리했다면 종료
+        // 이미 처리했다면 종료
         if (hasDetectedDecreaseHealth)
         {
             return;
         }
 
 
-        // 다시 한 번 Interaction 상태 확인
+        // 다시 Interaction 상태 확인
         if (!PlayerIsInteracting())
         {
             hasDetectedDecreaseHealth = false;
-
             return;
         }
 
@@ -220,7 +225,7 @@ public class EnemyDetectionSystem : MonoBehaviour
 
 
         Debug.Log(
-            "Health 감소 Range에서 Player 감지"
+            "Health 감소 Raycast : Player 감지"
         );
 
 
@@ -257,18 +262,30 @@ public class EnemyDetectionSystem : MonoBehaviour
 
 
     // ==========================================
-    // Raycast 시작 위치
+    // Raycast Origin
     // ==========================================
 
     private Vector3 GetRaycastOrigin()
     {
+        Vector3 origin;
+
+
+        // 지정된 Origin이 있으면 사용
         if (raycastOrigin != null)
         {
-            return raycastOrigin.position;
+            origin = raycastOrigin.position;
+        }
+        else
+        {
+            origin = transform.position;
         }
 
 
-        return transform.position;
+        // 높이 보정
+        origin.y += raycastHeightOffset;
+
+
+        return origin;
     }
 
 
@@ -284,7 +301,6 @@ public class EnemyDetectionSystem : MonoBehaviour
 
         // ------------------------------------------
         // Kill Range
-        // 정면
         // ------------------------------------------
 
         Gizmos.color =
@@ -299,7 +315,6 @@ public class EnemyDetectionSystem : MonoBehaviour
 
         // ------------------------------------------
         // Health 감소 Range
-        // 왼쪽 90도
         // ------------------------------------------
 
         Vector3 decreaseHealthDirection =
@@ -318,6 +333,20 @@ public class EnemyDetectionSystem : MonoBehaviour
             origin,
             decreaseHealthDirection *
             decreaseHealthRange
+        );
+
+
+        // ------------------------------------------
+        // Raycast Origin 위치 표시
+        // ------------------------------------------
+
+        Gizmos.color =
+            Color.white;
+
+
+        Gizmos.DrawSphere(
+            origin,
+            0.05f
         );
     }
 }

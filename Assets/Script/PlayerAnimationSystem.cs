@@ -2,34 +2,37 @@ using UnityEngine;
 
 public class PlayerAnimationSystem : MonoBehaviour
 {
-    // ========================================
-    // Animator
-    // ========================================
-
     [SerializeField] private Animator animator;
 
-
-    // ========================================
-    // Joke Animation Group
-    // ========================================
-
-    // Joke 애니메이션 State 이름들
     [SerializeField] private string[] jokeStateNames;
 
-
-    // ========================================
-    // HP Decrease Animation Group
-    // ========================================
-
-    // HP 감소 애니메이션 State 이름들
     [SerializeField] private string[] hpDecreaseStateNames;
 
-
-    // ========================================
-    // Game Over Animation
-    // ========================================
-
     [SerializeField] private string gameOverStateName = "GameOver";
+
+    [SerializeField] private AnimationClip gameOverAnimation;
+
+
+    // ========================================
+    // Interaction 상태
+    // ========================================
+
+    public void SetInteractionState(bool state)
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetBool(
+            "IsInteracting",
+            state
+        );
+
+        Debug.Log(
+            "Animator IsInteracting = " + state
+        );
+    }
 
 
     // ========================================
@@ -49,7 +52,6 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
-
         string selectedState =
             jokeStateNames[
                 Random.Range(
@@ -58,9 +60,13 @@ public class PlayerAnimationSystem : MonoBehaviour
                 )
             ];
 
+        Debug.Log(
+            "Joke 재생 : " + selectedState
+        );
 
-        animator.Play(
+        animator.CrossFadeInFixedTime(
             selectedState,
+            0.05f,
             0,
             0f
         );
@@ -68,7 +74,7 @@ public class PlayerAnimationSystem : MonoBehaviour
 
 
     // ========================================
-    // HP Decrease
+    // HP 감소
     // ========================================
 
     public void PlayHpDecrease()
@@ -84,7 +90,6 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
-
         string selectedState =
             hpDecreaseStateNames[
                 Random.Range(
@@ -93,9 +98,9 @@ public class PlayerAnimationSystem : MonoBehaviour
                 )
             ];
 
-
-        animator.Play(
+        animator.CrossFadeInFixedTime(
             selectedState,
+            0.05f,
             0,
             0f
         );
@@ -113,9 +118,9 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
-
-        animator.Play(
+        animator.CrossFadeInFixedTime(
             gameOverStateName,
+            0.05f,
             0,
             0f
         );
@@ -123,22 +128,16 @@ public class PlayerAnimationSystem : MonoBehaviour
 
 
     // ========================================
-    // Game Over Animation Event
+    // Game Over Animation Length
     // ========================================
 
-    // Game Over 애니메이션 마지막 프레임에서 호출
-    public void OnGameOverAnimationFinished()
+    public float GetGameOverAnimationLength()
     {
-        GameManager gameManager =
-            FindFirstObjectByType<GameManager>();
-
-
-        if (gameManager == null)
+        if (gameOverAnimation == null)
         {
-            return;
+            return 0f;
         }
 
-
-        gameManager.ShowGameOverUI();
+        return gameOverAnimation.length;
     }
 }

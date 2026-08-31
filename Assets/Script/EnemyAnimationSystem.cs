@@ -13,33 +13,22 @@ public class EnemyAnimationSystem : MonoBehaviour
     // Animation Clip
     // ========================================
 
-    [SerializeField] private AnimationClip glanceAnimation;
+    // Turn 애니메이션 길이 계산용
     [SerializeField] private AnimationClip turnAnimation;
+
+    // Return 애니메이션 길이 계산용
     [SerializeField] private AnimationClip returnAnimation;
 
 
     // ========================================
-    // Trigger 이름
+    // Trigger
     // ========================================
 
     [SerializeField] private string glanceTriggerName = "Glance";
+
     [SerializeField] private string turnTriggerName = "Turn";
+
     [SerializeField] private string returnTriggerName = "Return";
-
-
-    // ========================================
-    // Idle
-    // ========================================
-
-    public void PlayIdle()
-    {
-        if (animator == null)
-        {
-            return;
-        }
-
-        animator.SetTrigger("Idle");
-    }
 
 
     // ========================================
@@ -53,9 +42,13 @@ public class EnemyAnimationSystem : MonoBehaviour
             return;
         }
 
+
         ResetAllTriggers();
 
-        animator.SetTrigger(glanceTriggerName);
+
+        animator.SetTrigger(
+            glanceTriggerName
+        );
     }
 
 
@@ -70,10 +63,12 @@ public class EnemyAnimationSystem : MonoBehaviour
             return;
         }
 
+
         if (turnAnimation == null)
         {
             return;
         }
+
 
         if (turnDuration <= 0f)
         {
@@ -81,17 +76,21 @@ public class EnemyAnimationSystem : MonoBehaviour
         }
 
 
-        // 애니메이션 원본 길이에 맞춰 속도 계산
         float animationSpeed =
-            turnAnimation.length / turnDuration;
+            turnAnimation.length /
+            turnDuration;
 
 
-        animator.speed = animationSpeed;
+        animator.speed =
+            animationSpeed;
 
 
         ResetAllTriggers();
 
-        animator.SetTrigger(turnTriggerName);
+
+        animator.SetTrigger(
+            turnTriggerName
+        );
     }
 
 
@@ -106,10 +105,12 @@ public class EnemyAnimationSystem : MonoBehaviour
             return;
         }
 
+
         if (returnAnimation == null)
         {
             return;
         }
+
 
         if (returnDuration <= 0f)
         {
@@ -118,20 +119,25 @@ public class EnemyAnimationSystem : MonoBehaviour
 
 
         float animationSpeed =
-            returnAnimation.length / returnDuration;
+            returnAnimation.length /
+            returnDuration;
 
 
-        animator.speed = animationSpeed;
+        animator.speed =
+            animationSpeed;
 
 
         ResetAllTriggers();
 
-        animator.SetTrigger(returnTriggerName);
+
+        animator.SetTrigger(
+            returnTriggerName
+        );
     }
 
 
     // ========================================
-    // Animation Speed Reset
+    // Animator Speed Reset
     // ========================================
 
     public void ResetAnimationSpeed()
@@ -141,18 +147,27 @@ public class EnemyAnimationSystem : MonoBehaviour
             return;
         }
 
+
         animator.speed = 1f;
     }
 
 
     // ========================================
-    // Trigger 초기화
+    // Trigger Reset
     // ========================================
 
     private void ResetAllTriggers()
     {
-        animator.ResetTrigger(glanceTriggerName);
-        animator.ResetTrigger(turnTriggerName);
-        animator.ResetTrigger(returnTriggerName);
+        animator.ResetTrigger(
+            glanceTriggerName
+        );
+
+        animator.ResetTrigger(
+            turnTriggerName
+        );
+
+        animator.ResetTrigger(
+            returnTriggerName
+        );
     }
 }

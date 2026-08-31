@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class PlayerHealthSystem : MonoBehaviour
 {
@@ -7,9 +8,22 @@ public class PlayerHealthSystem : MonoBehaviour
     // Health
     // ==============================
 
+    // 최대 체력
     [SerializeField] private int maxHealth = 100;
 
+    // 현재 체력
     [SerializeField] private int currentHealth;
+
+
+    // ==============================
+    // 기본 지속 체력 감소
+    // ==============================
+
+    // 일정 시간마다 감소할 체력
+    [SerializeField] private int passiveDecreaseAmount = 10;
+
+    // 체력 감소 간격
+    [SerializeField] private float passiveDecreaseInterval = 1f;
 
 
     // ==============================
@@ -27,10 +41,10 @@ public class PlayerHealthSystem : MonoBehaviour
 
 
     // ==============================
-    // Animation System
+    // Coroutine
     // ==============================
 
-    [SerializeField] private PlayerAnimationSystem animationSystem;
+    private Coroutine passiveHealthDecreaseRoutine;
 
 
     // ==============================
@@ -39,12 +53,53 @@ public class PlayerHealthSystem : MonoBehaviour
 
     private void Start()
     {
-        // 시작 시 최대 체력
         currentHealth = maxHealth;
 
 
-        // UI 갱신
         UpdateHealthUI();
+
+
+        // 기본 지속 HP 감소 시작
+        passiveHealthDecreaseRoutine =
+            StartCoroutine(
+                PassiveHealthDecreaseRoutine()
+            );
+    }
+
+
+    // ==============================
+    // 기본 지속 HP 감소
+    // ==============================
+
+    private IEnumerator PassiveHealthDecreaseRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(
+                passiveDecreaseInterval
+            );
+
+
+            // 이미 죽었으면 종료
+            if (currentHealth <= 0)
+            {
+                yield break;
+            }
+
+
+            // 기본 지속 HP 감소
+            DecreaseHealth(
+                passiveDecreaseAmount
+            );
+
+
+            // Game Over라면 종료
+            if (gameManager != null &&
+                gameManager.IsGameOver())
+            {
+                yield break;
+            }
+        }
     }
 
 
@@ -54,18 +109,15 @@ public class PlayerHealthSystem : MonoBehaviour
 
     public void DecreaseHealth(int amount)
     {
-        // 이미 죽었으면 더 이상 감소시키지 않는다.
         if (currentHealth <= 0)
         {
             return;
         }
 
 
-        // HP 감소
         currentHealth -= amount;
 
 
-        // 0 이하 방지
         currentHealth =
             Mathf.Max(
                 currentHealth,
@@ -73,7 +125,6 @@ public class PlayerHealthSystem : MonoBehaviour
             );
 
 
-        // UI 갱신
         UpdateHealthUI();
 
 
@@ -83,14 +134,16 @@ public class PlayerHealthSystem : MonoBehaviour
         );
 
 
-        // HP 감소 애니메이션
-        if (animationSystem != null)
-        {
-            animationSystem.PlayHpDecrease();
-        }
+        // ==================================
+        // 여기서는 HP 감소 애니메이션을
+        // 호출하지 않는다.
+        //
+        // Enemy에 의한 감소인지
+        // 기본 지속 감소인지 구분해야 하기 때문.
+        // ==================================
 
 
-        // Health 0
+        // Health = 0
         if (currentHealth <= 0)
         {
             if (gameManager != null)
@@ -107,18 +160,15 @@ public class PlayerHealthSystem : MonoBehaviour
 
     public void IncreaseHealth(int amount)
     {
-        // 사망 상태라면 회복하지 않는다.
         if (currentHealth <= 0)
         {
             return;
         }
 
 
-        // HP 증가
         currentHealth += amount;
 
 
-        // 최대 체력 제한
         currentHealth =
             Mathf.Min(
                 currentHealth,
@@ -126,7 +176,6 @@ public class PlayerHealthSystem : MonoBehaviour
             );
 
 
-        // UI 갱신
         UpdateHealthUI();
 
 

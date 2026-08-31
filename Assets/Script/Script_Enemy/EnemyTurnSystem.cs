@@ -17,7 +17,6 @@ public class EnemyTurnSystem : MonoBehaviour
     // Glance 체류 전환용 시간
     // ========================================
 
-    // 힐끔 본 후 실제 Turn까지 기다리는 시간
     [SerializeField] private float glanceDuration = 0.5f;
 
 
@@ -49,11 +48,23 @@ public class EnemyTurnSystem : MonoBehaviour
     // Spot Light
     // ========================================
 
-    [SerializeField] private Light spotLight;
+    // Enemy 정면을 비추는 Spot Light
+    [SerializeField] private Light frontSpotLight;
+
+    // Enemy 기준 왼쪽 90°를 비추는 Spot Light
+    [SerializeField] private Light left90SpotLight;
+
+    // Enemy 기준 뒤쪽 / 빨간 Raycast 방향을 비추는 Spot Light
+    [SerializeField] private Light redSpotLight;
+
+
+    // ========================================
+    // Spot Light 색상
+    // ========================================
 
     [SerializeField] private Color normalLightColor = Color.green;
 
-    [SerializeField] private Color turningLightColor = Color.yellow;
+    [SerializeField] private Color warningLightColor = Color.yellow;
 
     [SerializeField] private Color dangerLightColor = Color.red;
 
@@ -113,7 +124,8 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void Start()
     {
-        SetSpotLightColor(normalLightColor);
+        // 시작 상태 = 정면 초록
+        SetFrontSpotLight();
 
 
         if (timeStatusUI != null)
@@ -212,7 +224,9 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
         turnRoutine =
-            StartCoroutine(TurnRoutine());
+            StartCoroutine(
+                TurnRoutine()
+            );
     }
 
 
@@ -237,9 +251,8 @@ public class EnemyTurnSystem : MonoBehaviour
             currentWaitingElapsedTime = 0f;
 
 
-            SetSpotLightColor(
-                normalLightColor
-            );
+            // 대기 중에는 정면 초록
+            SetFrontSpotLight();
 
 
             while (currentWaitingElapsedTime <
@@ -262,11 +275,8 @@ public class EnemyTurnSystem : MonoBehaviour
             }
 
 
-            // Glance 단계에서는
-            // Spot Light를 노란색으로 변경
-            SetSpotLightColor(
-                turningLightColor
-            );
+            // Glance 중에는 왼쪽 90° 노랑
+            SetLeft90SpotLight();
 
 
             yield return new WaitForSeconds(
@@ -317,6 +327,10 @@ public class EnemyTurnSystem : MonoBehaviour
                 );
 
 
+            // 회전 완료 후 빨간 Spot Light 유지
+            SetRedSpotLight();
+
+
             yield return new WaitForSeconds(
                 lookBackTime
             );
@@ -344,6 +358,11 @@ public class EnemyTurnSystem : MonoBehaviour
             }
 
 
+            // Return 시작과 동시에
+            // 정면 초록 Spot Light ON
+            SetFrontSpotLight();
+
+
             // ========================================
             // 7. 실제 180° 복귀
             // ========================================
@@ -358,9 +377,7 @@ public class EnemyTurnSystem : MonoBehaviour
             // 8. 기본 상태
             // ========================================
 
-            SetSpotLightColor(
-                normalLightColor
-            );
+            SetFrontSpotLight();
 
 
             if (animationSystem != null)
@@ -418,7 +435,7 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
             // ----------------------------------------
-            // 0 ~ 1 진행률
+            // 진행률
             // ----------------------------------------
 
             float progress =
@@ -440,29 +457,26 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
             // ----------------------------------------
-            // Spot Light
+            // Turn 중 Spot Light
             // ----------------------------------------
 
-            if (isReturning)
-            {
-                SetSpotLightColor(
-                    normalLightColor
-                );
-            }
-            else
+            if (!isReturning)
             {
                 if (progress < 0.5f)
                 {
-                    SetSpotLightColor(
-                        turningLightColor
-                    );
+                    // 0° ~ 90°
+                    SetLeft90SpotLight();
                 }
                 else
                 {
-                    SetSpotLightColor(
-                        dangerLightColor
-                    );
+                    // 90° ~ 180°
+                    SetRedSpotLight();
                 }
+            }
+            else
+            {
+                // Return 중에는 정면 초록 유지
+                SetFrontSpotLight();
             }
 
 
@@ -480,40 +494,113 @@ public class EnemyTurnSystem : MonoBehaviour
         }
 
 
-        // 최종 방향 보정
+        // 정확한 최종 방향
         transform.rotation =
             targetRotation;
 
 
-        // 최종 Light
+        // ----------------------------------------
+        // 회전 완료 후 Spot Light
+        // ----------------------------------------
+
         if (isReturning)
         {
-            SetSpotLightColor(
-                normalLightColor
-            );
+            // 복귀 완료 → 정면 초록
+            SetFrontSpotLight();
         }
         else
         {
-            SetSpotLightColor(
-                dangerLightColor
-            );
+            // 180° 회전 완료 → 빨강
+            SetRedSpotLight();
         }
     }
 
 
     // ========================================
-    // Spot Light
+    // 정면 Spot Light
     // ========================================
 
-    private void SetSpotLightColor(
-        Color color
-    )
+    private void SetFrontSpotLight()
     {
-        if (spotLight == null)
+        // 정면 초록 ON
+        if (frontSpotLight != null)
         {
-            return;
+            frontSpotLight.enabled = true;
+            frontSpotLight.color =
+                normalLightColor;
         }
 
-        spotLight.color = color;
+
+        // 나머지 OFF
+        if (left90SpotLight != null)
+        {
+            left90SpotLight.enabled = false;
+        }
+
+
+        if (redSpotLight != null)
+        {
+            redSpotLight.enabled = false;
+        }
+    }
+
+
+    // ========================================
+    // 왼쪽 90° Spot Light
+    // ========================================
+
+    private void SetLeft90SpotLight()
+    {
+        // 정면 OFF
+        if (frontSpotLight != null)
+        {
+            frontSpotLight.enabled = false;
+        }
+
+
+        // 왼쪽 90° 노랑 ON
+        if (left90SpotLight != null)
+        {
+            left90SpotLight.enabled = true;
+            left90SpotLight.color =
+                warningLightColor;
+        }
+
+
+        // 빨강 OFF
+        if (redSpotLight != null)
+        {
+            redSpotLight.enabled = false;
+        }
+    }
+
+
+    // ========================================
+    // 빨간 Spot Light
+    // ========================================
+
+    private void SetRedSpotLight()
+    {
+        // 정면 OFF
+        if (frontSpotLight != null)
+        {
+            frontSpotLight.enabled = false;
+        }
+
+
+        // 왼쪽 90° OFF
+        if (left90SpotLight != null)
+        {
+            left90SpotLight.enabled = false;
+        }
+
+
+        // 빨강 ON
+        if (redSpotLight != null)
+        {
+            redSpotLight.enabled = true;
+            redSpotLight.color =
+                dangerLightColor;
+        }
     }
 }

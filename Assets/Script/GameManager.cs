@@ -76,6 +76,13 @@ public class GameManager : MonoBehaviour
 
 
     // ==============================
+    // Game Over 확정 점수
+    // ==============================
+
+    private int finalScore = 0;
+
+
+    // ==============================
     // Detection Type
     // ==============================
 
@@ -204,7 +211,16 @@ public class GameManager : MonoBehaviour
             );
 
 
-            // Interaction 종료 확인
+            // Game Over / Clear가 되었으면 즉시 종료
+            if (isGameOver || isGameClear)
+            {
+                interactionRewardRoutine = null;
+
+                yield break;
+            }
+
+
+            // Interaction이 종료되었으면 종료
             if (!playerControllerSystem.IsInteracting())
             {
                 interactionRewardRoutine = null;
@@ -213,14 +229,20 @@ public class GameManager : MonoBehaviour
             }
 
 
-            // Score
-            scoreSystem.AddInteractionScore();
+            // Score 증가
+            if (scoreSystem != null)
+            {
+                scoreSystem.AddInteractionScore();
+            }
 
 
             // Health 회복
-            playerHealthSystem.IncreaseHealth(
-                interactionHealthAmount
-            );
+            if (playerHealthSystem != null)
+            {
+                playerHealthSystem.IncreaseHealth(
+                    interactionHealthAmount
+                );
+            }
         }
 
 
@@ -248,7 +270,6 @@ public class GameManager : MonoBehaviour
         }
 
 
-        // Interaction 중이 아니면 처리하지 않는다.
         if (!playerControllerSystem.IsInteracting())
         {
             return;
@@ -257,11 +278,16 @@ public class GameManager : MonoBehaviour
 
         switch (detectionType)
         {
-            // ==================================
+            // ==============================
             // Health 감소
-            // ==================================
+            // ==============================
 
             case DetectionType.DecreaseHealth:
+
+                Debug.Log(
+                    "Enemy 발각 : Health 감소"
+                );
+
 
                 if (playerHealthSystem != null)
                 {
@@ -271,8 +297,23 @@ public class GameManager : MonoBehaviour
                 }
 
 
-                // 즉시 Interaction 종료
-                playerControllerSystem.EndInteraction();
+                // HP가 0이 되어 Game Over라면
+                // HP 감소 애니메이션을 실행하지 않는다.
+                if (!isGameOver &&
+                    playerHealthSystem != null &&
+                    playerHealthSystem.GetCurrentHealth() > 0)
+                {
+                    if (playerAnimationSystem != null)
+                    {
+                        playerAnimationSystem.PlayHpDecrease();
+                    }
+                }
+
+
+                if (playerControllerSystem.IsInteracting())
+                {
+                    playerControllerSystem.EndInteraction();
+                }
 
 
                 Debug.Log(
@@ -282,14 +323,14 @@ public class GameManager : MonoBehaviour
                 break;
 
 
-            // ==================================
+            // ==============================
             // Kill
-            // ==================================
+            // ==============================
 
             case DetectionType.Kill:
 
                 Debug.Log(
-                    "Player 발각 : Kill Range"
+                    "Enemy 발각 : Kill Range"
                 );
 
 
@@ -328,10 +369,29 @@ public class GameManager : MonoBehaviour
         }
 
 
+        // ==================================
+        // Game Over 판정 순간을
+        // 최종 결과 확정 시점으로 만든다.
+        // ==================================
+
         isGameOver = true;
 
 
+        // ==================================
+        // 최종 점수를 지금 즉시 저장
+        // ==================================
+
+        if (scoreSystem != null)
+        {
+            finalScore =
+                scoreSystem.GetCurrentScore();
+        }
+
+
+        // ==================================
         // Interaction 종료
+        // ==================================
+
         if (playerControllerSystem != null &&
             playerControllerSystem.IsInteracting())
         {
@@ -339,13 +399,15 @@ public class GameManager : MonoBehaviour
         }
 
 
-        // 최종 점수 표시 데이터
-        if (lastScoreText != null &&
-            scoreSystem != null)
+        // ==================================
+        // 최종 점수 Text
+        // ==================================
+
+        if (lastScoreText != null)
         {
             lastScoreText.text =
                 "최종 점수: " +
-                scoreSystem.GetCurrentScore();
+                finalScore;
         }
 
 
@@ -356,18 +418,57 @@ public class GameManager : MonoBehaviour
         if (playerAnimationSystem != null)
         {
             playerAnimationSystem.PlayGameOver();
+
+
+            StartCoroutine(
+                ShowGameOverUIAfterAnimation()
+            );
         }
         else
         {
-            // Animation System이 없다면
-            // 바로 UI 표시
             ShowGameOverUI();
         }
 
 
         Debug.Log(
-            "Game Over"
+            "Game Over / 최종 점수 : " +
+            finalScore
         );
+    }
+
+
+    // ==============================
+    // Game Over Animation 대기
+    // ==============================
+
+    private IEnumerator ShowGameOverUIAfterAnimation()
+    {
+        yield return null;
+
+
+        float animationLength = 0f;
+
+
+        if (playerAnimationSystem != null)
+        {
+            animationLength =
+                playerAnimationSystem
+                    .GetGameOverAnimationLength();
+        }
+
+
+        if (animationLength <= 0f)
+        {
+            animationLength = 1f;
+        }
+
+
+        yield return new WaitForSeconds(
+            animationLength
+        );
+
+
+        ShowGameOverUI();
     }
 
 
@@ -377,40 +478,36 @@ public class GameManager : MonoBehaviour
 
     public void ShowGameOverUI()
     {
-        // 이미 UI가 표시된 상태라면 종료
         if (!isGameOver)
         {
             return;
         }
 
 
-        // Game Over UI
         if (gameOverUI != null)
         {
             gameOverUI.SetActive(true);
         }
 
 
-        // Restart
         if (restartButton != null)
         {
             restartButton.SetActive(true);
         }
 
 
-        // Quit
         if (quitButton != null)
         {
             quitButton.SetActive(true);
         }
 
 
-        // 이제 게임 정지
         Time.timeScale = 0f;
 
 
         Debug.Log(
-            "Game Over UI 표시"
+            "Game Over UI 표시 / 최종 점수 : " +
+            finalScore
         );
     }
 
@@ -515,7 +612,6 @@ public class GameManager : MonoBehaviour
 
 
         Application.Quit();
-
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

@@ -6,6 +6,7 @@ public class PlayerControllerSystem : MonoBehaviour
     // Interaction
     // ==============================
 
+    // 현재 Interaction 상태
     private bool isInteracting = false;
 
 
@@ -27,12 +28,18 @@ public class PlayerControllerSystem : MonoBehaviour
     // Player 색상
     // ==============================
 
+    // Interaction 중일 때 색상
     [SerializeField] private Color interactingColor = Color.cyan;
 
+    // Interaction이 아닐 때 색상
     [SerializeField] private Color normalColor = Color.white;
 
 
-    // Player의 모든 Renderer
+    // ==============================
+    // Renderer
+    // ==============================
+
+    // Player 자신과 자식의 모든 Renderer
     private Renderer[] playerRenderers;
 
 
@@ -42,13 +49,19 @@ public class PlayerControllerSystem : MonoBehaviour
 
     private void Awake()
     {
-        // Player 자신과 자식 오브젝트의 Renderer를 모두 가져온다.
+        // Player Renderer 가져오기
         playerRenderers =
             GetComponentsInChildren<Renderer>();
 
 
         // 시작 시 기본 색상
         SetPlayerColor(normalColor);
+
+
+        Debug.Log(
+            "PlayerController 생성 : " +
+            gameObject.name
+        );
     }
 
 
@@ -58,14 +71,18 @@ public class PlayerControllerSystem : MonoBehaviour
 
     public void OnInteraction()
     {
-        // GameManager가 없으면 종료
+        // GameManager가 없으면 입력 처리하지 않음
         if (gameManager == null)
         {
+            Debug.LogWarning(
+                "PlayerControllerSystem : GameManager가 연결되지 않음"
+            );
+
             return;
         }
 
 
-        // Game Over / Clear 상태에서는 입력하지 않는다.
+        // Game Over / Game Clear 상태에서는 입력하지 않음
         if (gameManager.IsGameOver() ||
             gameManager.IsGameClear())
         {
@@ -73,7 +90,7 @@ public class PlayerControllerSystem : MonoBehaviour
         }
 
 
-        // 상태에 따라 시작 / 종료
+        // 현재 상태에 따라 시작 / 종료
         if (isInteracting)
         {
             EndInteraction();
@@ -91,11 +108,38 @@ public class PlayerControllerSystem : MonoBehaviour
 
     private void StartInteraction()
     {
+        // --------------------------------
+        // 1. 게임 로직 상태 변경
+        // --------------------------------
+
         isInteracting = true;
 
 
-        // Player 색상 변경
-        SetPlayerColor(interactingColor);
+        // --------------------------------
+        // 2. Player 색상 변경
+        // --------------------------------
+
+        SetPlayerColor(
+            interactingColor
+        );
+
+
+        // --------------------------------
+        // 3. Animator 상태 변경
+        // 반드시 Bool을 먼저 True로 만든다.
+        // --------------------------------
+
+        if (animationSystem != null)
+        {
+            animationSystem.SetInteractionState(
+                true
+            );
+
+
+            // Bool이 True가 된 뒤
+            // Joke 애니메이션 재생
+            animationSystem.PlayJoke();
+        }
 
 
         Debug.Log(
@@ -103,14 +147,10 @@ public class PlayerControllerSystem : MonoBehaviour
         );
 
 
-        // Joke 애니메이션 재생
-        if (animationSystem != null)
-        {
-            animationSystem.PlayJoke();
-        }
+        // --------------------------------
+        // 4. GameManager
+        // --------------------------------
 
-
-        // GameManager에 시작 전달
         gameManager.StartInteraction();
     }
 
@@ -121,19 +161,39 @@ public class PlayerControllerSystem : MonoBehaviour
 
     public void EndInteraction()
     {
-        // 이미 종료되어 있다면 실행하지 않는다.
+        // 이미 false라면 중복 처리하지 않음
         if (!isInteracting)
         {
             return;
         }
 
 
-        // 가장 먼저 상태를 false로 변경
+        // --------------------------------
+        // 1. 게임 로직 상태를 먼저 False
+        // --------------------------------
+
         isInteracting = false;
 
 
-        // 색상 원복
-        SetPlayerColor(normalColor);
+        // --------------------------------
+        // 2. 색상 복구
+        // --------------------------------
+
+        SetPlayerColor(
+            normalColor
+        );
+
+
+        // --------------------------------
+        // 3. Animator Bool False
+        // --------------------------------
+
+        if (animationSystem != null)
+        {
+            animationSystem.SetInteractionState(
+                false
+            );
+        }
 
 
         Debug.Log(
@@ -141,11 +201,28 @@ public class PlayerControllerSystem : MonoBehaviour
         );
 
 
-        // GameManager에 종료 전달
+        // --------------------------------
+        // 4. GameManager 보상 종료
+        // --------------------------------
+
         if (gameManager != null)
         {
             gameManager.EndInteraction();
         }
+
+
+        // 여기서 PlayIdle()은 호출하지 않는다.
+        //
+        // Animator의
+        //
+        // Joke1 → Idle1
+        // Joke2 → Idle1
+        //
+        // Transition이
+        //
+        // IsInteracting == false
+        //
+        // 를 보고 Idle로 전환한다.
     }
 
 
@@ -163,8 +240,21 @@ public class PlayerControllerSystem : MonoBehaviour
 
         foreach (Renderer playerRenderer in playerRenderers)
         {
+            if (playerRenderer == null)
+            {
+                continue;
+            }
+
+
             foreach (Material material in playerRenderer.materials)
             {
+                if (material == null)
+                {
+                    continue;
+                }
+
+
+                // URP / 일반 Shader
                 if (material.HasProperty("_BaseColor"))
                 {
                     material.SetColor(
@@ -172,6 +262,7 @@ public class PlayerControllerSystem : MonoBehaviour
                         color
                     );
                 }
+                // 기존 Standard Shader
                 else if (material.HasProperty("_Color"))
                 {
                     material.SetColor(
