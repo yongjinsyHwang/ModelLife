@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,13 +8,35 @@ public class CameraManager : MonoBehaviour
     // Cameras
     // ========================================
 
-    [SerializeField] private Camera mainCamera;
-
-    [SerializeField] private Camera playerCamera;
-
+    [SerializeField] private Camera cctv1Camera;
+    [SerializeField] private Camera cctv2Camera;
     [SerializeField] private Camera enemyCamera;
+    [SerializeField] private Camera playerACamera;
+    [SerializeField] private Camera playerBCamera;
+    [SerializeField] private Camera playerCCamera;
 
-    [SerializeField] private Camera fpsCamera;
+
+    // ========================================
+    // Game Clear Camera Lock
+    // ========================================
+
+    private bool isGameClearCameraLocked = false;
+
+
+    // ========================================
+    // Game Clear 연출
+    // ========================================
+
+    [SerializeField] private GameObject effectItem;
+
+    [SerializeField] private Transform effectSpawnPoint;
+
+    [SerializeField] private Transform effectTargetPoint;
+
+    [SerializeField] private float effectFallSpeed = 2f;
+
+
+    private bool hasPlayedGameClearEffect = false;
 
 
     // ========================================
@@ -22,8 +45,9 @@ public class CameraManager : MonoBehaviour
 
     private void Start()
     {
-        // 시작 시 Main Camera
-        SwitchCamera(mainCamera);
+        SwitchCamera(
+            cctv1Camera
+        );
     }
 
 
@@ -33,35 +57,189 @@ public class CameraManager : MonoBehaviour
 
     private void Update()
     {
-        // 1 → Main Camera
-        if (Keyboard.current != null &&
-            Keyboard.current.digit1Key.wasPressedThisFrame)
+        if (Keyboard.current == null)
         {
-            SwitchCamera(mainCamera);
+            return;
         }
 
 
-        // 2 → Player Camera
-        if (Keyboard.current != null &&
-            Keyboard.current.digit2Key.wasPressedThisFrame)
+        if (isGameClearCameraLocked)
         {
-            SwitchCamera(playerCamera);
+            return;
         }
 
 
-        // 3 → Enemy Camera
-        if (Keyboard.current != null &&
-            Keyboard.current.digit3Key.wasPressedThisFrame)
+        if (Keyboard.current.digit1Key.wasPressedThisFrame)
         {
-            SwitchCamera(enemyCamera);
+            SwitchCamera(
+                cctv1Camera
+            );
         }
 
 
-        // 4 → FPS Camera
-        if (Keyboard.current != null &&
-            Keyboard.current.digit4Key.wasPressedThisFrame)
+        if (Keyboard.current.digit2Key.wasPressedThisFrame)
         {
-            SwitchCamera(fpsCamera);
+            SwitchCamera(
+                cctv2Camera
+            );
+        }
+
+
+        if (Keyboard.current.digit3Key.wasPressedThisFrame)
+        {
+            SwitchCamera(
+                enemyCamera
+            );
+        }
+
+
+        if (Keyboard.current.digit4Key.wasPressedThisFrame)
+        {
+            SwitchCamera(
+                playerACamera
+            );
+        }
+
+
+        if (Keyboard.current.digit5Key.wasPressedThisFrame)
+        {
+            SwitchCamera(
+                playerBCamera
+            );
+        }
+
+
+        if (Keyboard.current.digit6Key.wasPressedThisFrame)
+        {
+            SwitchCamera(
+                playerCCamera
+            );
+        }
+    }
+
+
+    // ========================================
+    // Game Clear Camera Lock
+    // ========================================
+
+    public void LockGameClearCamera()
+    {
+        if (isGameClearCameraLocked)
+        {
+            return;
+        }
+
+
+        isGameClearCameraLocked = true;
+
+
+        SwitchCamera(
+            playerCCamera
+        );
+
+
+        Debug.Log(
+            "Game Clear : PlayerC 카메라 고정"
+        );
+    }
+
+
+    // ========================================
+    // Game Clear 연출
+    // ========================================
+
+    public void PlayGameClearEffect()
+    {
+        if (hasPlayedGameClearEffect)
+        {
+            return;
+        }
+
+
+        hasPlayedGameClearEffect = true;
+
+
+        if (effectItem == null ||
+            effectSpawnPoint == null ||
+            effectTargetPoint == null)
+        {
+            Debug.LogWarning(
+                "CameraManager : " +
+                "Game Clear 연출 설정을 확인하세요."
+            );
+
+            return;
+        }
+
+
+        GameObject spawnedItem =
+            Instantiate(
+                effectItem,
+                effectSpawnPoint.position,
+                effectSpawnPoint.rotation
+            );
+
+
+        StartCoroutine(
+            MoveGameClearEffect(
+                spawnedItem
+            )
+        );
+    }
+
+
+    // ========================================
+    // Game Clear 아이템 이동
+    // ========================================
+
+    private IEnumerator MoveGameClearEffect(
+        GameObject spawnedItem
+    )
+    {
+        if (spawnedItem == null)
+        {
+            yield break;
+        }
+
+
+        float speed =
+            Mathf.Max(
+                effectFallSpeed,
+                0.01f
+            );
+
+
+        while (spawnedItem != null)
+        {
+            spawnedItem.transform.position =
+                Vector3.MoveTowards(
+                    spawnedItem.transform.position,
+                    effectTargetPoint.position,
+                    speed * Time.deltaTime
+                );
+
+
+            float distance =
+                Vector3.Distance(
+                    spawnedItem.transform.position,
+                    effectTargetPoint.position
+                );
+
+
+            if (distance <= 0.01f)
+            {
+                break;
+            }
+
+
+            yield return null;
+        }
+
+
+        if (spawnedItem != null)
+        {
+            spawnedItem.transform.position =
+                effectTargetPoint.position;
         }
     }
 
@@ -70,22 +248,28 @@ public class CameraManager : MonoBehaviour
     // Camera Switch
     // ========================================
 
-    private void SwitchCamera(Camera targetCamera)
+    private void SwitchCamera(
+        Camera targetCamera
+    )
     {
         if (targetCamera == null)
         {
+            Debug.LogWarning(
+                "CameraManager : " +
+                "전환할 카메라가 연결되지 않았습니다."
+            );
+
             return;
         }
 
 
-        // 모든 카메라 OFF
         SetCameraEnabled(
-            mainCamera,
+            cctv1Camera,
             false
         );
 
         SetCameraEnabled(
-            playerCamera,
+            cctv2Camera,
             false
         );
 
@@ -95,15 +279,30 @@ public class CameraManager : MonoBehaviour
         );
 
         SetCameraEnabled(
-            fpsCamera,
+            playerACamera,
+            false
+        );
+
+        SetCameraEnabled(
+            playerBCamera,
+            false
+        );
+
+        SetCameraEnabled(
+            playerCCamera,
             false
         );
 
 
-        // 선택한 카메라 ON
         SetCameraEnabled(
             targetCamera,
             true
+        );
+
+
+        Debug.Log(
+            "Camera 변경 : " +
+            targetCamera.gameObject.name
         );
     }
 
@@ -114,7 +313,7 @@ public class CameraManager : MonoBehaviour
 
     private void SetCameraEnabled(
         Camera targetCamera,
-        bool enabled
+        bool state
     )
     {
         if (targetCamera == null)
@@ -123,6 +322,7 @@ public class CameraManager : MonoBehaviour
         }
 
 
-        targetCamera.enabled = enabled;
+        targetCamera.enabled =
+            state;
     }
 }

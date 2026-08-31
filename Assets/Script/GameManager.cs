@@ -17,6 +17,10 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private PlayerAnimationSystem playerAnimationSystem;
 
+    [SerializeField] private CameraManager cameraManager;
+
+    [SerializeField] private SoundManager soundManager;
+
 
     // ==============================
     // Detection Settings
@@ -76,7 +80,7 @@ public class GameManager : MonoBehaviour
 
 
     // ==============================
-    // Game Over 확정 점수
+    // Game Over Final Score
     // ==============================
 
     private int finalScore = 0;
@@ -206,37 +210,35 @@ public class GameManager : MonoBehaviour
             playerControllerSystem.IsInteracting()
         )
         {
+            if (scoreSystem == null)
+            {
+                interactionRewardRoutine = null;
+                yield break;
+            }
+
+
             yield return new WaitForSeconds(
                 scoreSystem.GetInteractionScoreInterval()
             );
 
 
-            // Game Over / Clear가 되었으면 즉시 종료
             if (isGameOver || isGameClear)
             {
                 interactionRewardRoutine = null;
-
                 yield break;
             }
 
 
-            // Interaction이 종료되었으면 종료
             if (!playerControllerSystem.IsInteracting())
             {
                 interactionRewardRoutine = null;
-
                 yield break;
             }
 
 
-            // Score 증가
-            if (scoreSystem != null)
-            {
-                scoreSystem.AddInteractionScore();
-            }
+            scoreSystem.AddInteractionScore();
 
 
-            // Health 회복
             if (playerHealthSystem != null)
             {
                 playerHealthSystem.IncreaseHealth(
@@ -297,8 +299,7 @@ public class GameManager : MonoBehaviour
                 }
 
 
-                // HP가 0이 되어 Game Over라면
-                // HP 감소 애니메이션을 실행하지 않는다.
+                // HP 0이면 이미 GameOver 처리됨
                 if (!isGameOver &&
                     playerHealthSystem != null &&
                     playerHealthSystem.GetCurrentHealth() > 0)
@@ -370,15 +371,14 @@ public class GameManager : MonoBehaviour
 
 
         // ==================================
-        // Game Over 판정 순간을
-        // 최종 결과 확정 시점으로 만든다.
+        // Game Over 즉시 확정
         // ==================================
 
         isGameOver = true;
 
 
         // ==================================
-        // 최종 점수를 지금 즉시 저장
+        // 최종 점수 확정
         // ==================================
 
         if (scoreSystem != null)
@@ -400,7 +400,7 @@ public class GameManager : MonoBehaviour
 
 
         // ==================================
-        // 최종 점수 Text
+        // 최종 점수 UI
         // ==================================
 
         if (lastScoreText != null)
@@ -412,13 +412,22 @@ public class GameManager : MonoBehaviour
 
 
         // ==================================
+        // Game Over 사운드
+        // ==================================
+
+        if (soundManager != null)
+        {
+            soundManager.PlayGameOverSound();
+        }
+
+
+        // ==================================
         // Game Over Animation
         // ==================================
 
         if (playerAnimationSystem != null)
         {
             playerAnimationSystem.PlayGameOver();
-
 
             StartCoroutine(
                 ShowGameOverUIAfterAnimation()
@@ -527,12 +536,42 @@ public class GameManager : MonoBehaviour
         isGameClear = true;
 
 
+        // ==================================
+        // Game Clear 사운드
+        // ==================================
+
+        if (soundManager != null)
+        {
+            soundManager.PlayGameClearSound();
+        }
+
+
+        // ==================================
+        // PlayerC 카메라 고정
+        // ==================================
+
+        if (cameraManager != null)
+        {
+            cameraManager.LockGameClearCamera();
+
+            cameraManager.PlayGameClearEffect();
+        }
+
+
+        // ==================================
+        // Interaction 종료
+        // ==================================
+
         if (playerControllerSystem != null &&
             playerControllerSystem.IsInteracting())
         {
             playerControllerSystem.EndInteraction();
         }
 
+
+        // ==================================
+        // UI
+        // ==================================
 
         if (gameClearButton != null)
         {

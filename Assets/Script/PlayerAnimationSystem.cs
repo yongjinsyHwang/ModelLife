@@ -2,13 +2,51 @@ using UnityEngine;
 
 public class PlayerAnimationSystem : MonoBehaviour
 {
+    // ========================================
+    // Animator
+    // ========================================
+
     [SerializeField] private Animator animator;
+
+
+    // ========================================
+    // Game Manager
+    // ========================================
+
+    [SerializeField] private GameManager gameManager;
+
+
+    // ========================================
+    // Interaction Bool
+    // ========================================
+
+    [SerializeField]
+    private string interactionBoolName =
+        "IsInteracting";
+
+
+    // ========================================
+    // Joke
+    // ========================================
 
     [SerializeField] private string[] jokeStateNames;
 
+
+    // ========================================
+    // HP Decrease
+    // ========================================
+
     [SerializeField] private string[] hpDecreaseStateNames;
 
-    [SerializeField] private string gameOverStateName = "GameOver";
+
+    // ========================================
+    // Game Over
+    // ========================================
+
+    [SerializeField]
+    private string gameOverStateName =
+        "GameOver";
+
 
     [SerializeField] private AnimationClip gameOverAnimation;
 
@@ -24,13 +62,10 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
-        animator.SetBool(
-            "IsInteracting",
-            state
-        );
 
-        Debug.Log(
-            "Animator IsInteracting = " + state
+        animator.SetBool(
+            interactionBoolName,
+            state
         );
     }
 
@@ -46,11 +81,13 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
+
         if (jokeStateNames == null ||
             jokeStateNames.Length == 0)
         {
             return;
         }
+
 
         string selectedState =
             jokeStateNames[
@@ -60,9 +97,6 @@ public class PlayerAnimationSystem : MonoBehaviour
                 )
             ];
 
-        Debug.Log(
-            "Joke 재생 : " + selectedState
-        );
 
         animator.CrossFadeInFixedTime(
             selectedState,
@@ -74,7 +108,7 @@ public class PlayerAnimationSystem : MonoBehaviour
 
 
     // ========================================
-    // HP 감소
+    // HP Decrease
     // ========================================
 
     public void PlayHpDecrease()
@@ -84,11 +118,13 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
+
         if (hpDecreaseStateNames == null ||
             hpDecreaseStateNames.Length == 0)
         {
             return;
         }
+
 
         string selectedState =
             hpDecreaseStateNames[
@@ -97,6 +133,7 @@ public class PlayerAnimationSystem : MonoBehaviour
                     hpDecreaseStateNames.Length
                 )
             ];
+
 
         animator.CrossFadeInFixedTime(
             selectedState,
@@ -118,6 +155,7 @@ public class PlayerAnimationSystem : MonoBehaviour
             return;
         }
 
+
         animator.CrossFadeInFixedTime(
             gameOverStateName,
             0.05f,
@@ -128,7 +166,7 @@ public class PlayerAnimationSystem : MonoBehaviour
 
 
     // ========================================
-    // Game Over Animation Length
+    // Game Over Animation 길이
     // ========================================
 
     public float GetGameOverAnimationLength()
@@ -137,6 +175,7 @@ public class PlayerAnimationSystem : MonoBehaviour
         {
             return 0f;
         }
+
 
         return gameOverAnimation.length;
     }

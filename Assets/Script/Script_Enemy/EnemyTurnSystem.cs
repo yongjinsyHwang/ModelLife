@@ -14,14 +14,14 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
     // ========================================
-    // Glance 체류 전환용 시간
+    // Glance 시간
     // ========================================
 
     [SerializeField] private float glanceDuration = 0.5f;
 
 
     // ========================================
-    // 정면 → 뒤 회전 시간
+    // Turn 시간
     // ========================================
 
     [SerializeField] private float minTurnDuration = 1f;
@@ -29,7 +29,7 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
     // ========================================
-    // 뒤 → 정면 복귀 시간
+    // Return 시간
     // ========================================
 
     [SerializeField] private float minReturnDuration = 1f;
@@ -48,13 +48,8 @@ public class EnemyTurnSystem : MonoBehaviour
     // Spot Light
     // ========================================
 
-    // Enemy 정면을 비추는 Spot Light
     [SerializeField] private Light frontSpotLight;
-
-    // Enemy 기준 왼쪽 90°를 비추는 Spot Light
     [SerializeField] private Light left90SpotLight;
-
-    // Enemy 기준 뒤쪽 / 빨간 Raycast 방향을 비추는 Spot Light
     [SerializeField] private Light redSpotLight;
 
 
@@ -63,9 +58,7 @@ public class EnemyTurnSystem : MonoBehaviour
     // ========================================
 
     [SerializeField] private Color normalLightColor = Color.green;
-
     [SerializeField] private Color warningLightColor = Color.yellow;
-
     [SerializeField] private Color dangerLightColor = Color.red;
 
 
@@ -77,15 +70,20 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
     // ========================================
+    // Sound Manager
+    // ========================================
+
+    [SerializeField] private SoundManager soundManager;
+
+
+    // ========================================
     // Developer UI
     // ========================================
 
     [SerializeField] private GameObject timeStatusUI;
 
     [SerializeField] private Text detectionWaitingTimeText;
-
     [SerializeField] private Text detectionTurnTimeText;
-
     [SerializeField] private Text detectionReturnTimeText;
 
 
@@ -94,9 +92,7 @@ public class EnemyTurnSystem : MonoBehaviour
     // ========================================
 
     private float currentWaitingTime;
-
     private float currentTurnTime;
-
     private float currentReturnTime;
 
 
@@ -105,9 +101,7 @@ public class EnemyTurnSystem : MonoBehaviour
     // ========================================
 
     private float currentWaitingElapsedTime;
-
     private float currentTurnElapsedTime;
-
     private float currentReturnElapsedTime;
 
 
@@ -124,7 +118,6 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void Start()
     {
-        // 시작 상태 = 정면 초록
         SetFrontSpotLight();
 
 
@@ -144,7 +137,6 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void Update()
     {
-        // Tab → Developer UI
         if (Keyboard.current != null &&
             Keyboard.current.tabKey.wasPressedThisFrame)
         {
@@ -170,7 +162,6 @@ public class EnemyTurnSystem : MonoBehaviour
         {
             return;
         }
-
 
         timeStatusUI.SetActive(
             !timeStatusUI.activeSelf
@@ -251,7 +242,6 @@ public class EnemyTurnSystem : MonoBehaviour
             currentWaitingElapsedTime = 0f;
 
 
-            // 대기 중에는 정면 초록
             SetFrontSpotLight();
 
 
@@ -275,7 +265,6 @@ public class EnemyTurnSystem : MonoBehaviour
             }
 
 
-            // Glance 중에는 왼쪽 90° 노랑
             SetLeft90SpotLight();
 
 
@@ -285,7 +274,7 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
             // ========================================
-            // 3. Turn 시간 결정
+            // 3. Turn
             // ========================================
 
             currentTurnTime =
@@ -297,12 +286,18 @@ public class EnemyTurnSystem : MonoBehaviour
             currentTurnElapsedTime = 0f;
 
 
-            // Turn Animation
             if (animationSystem != null)
             {
                 animationSystem.PlayTurn(
                     currentTurnTime
                 );
+            }
+
+
+            // 회전 시작음
+            if (soundManager != null)
+            {
+                soundManager.PlayTurnSound();
             }
 
 
@@ -317,7 +312,7 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
             // ========================================
-            // 5. 뒤를 바라보는 체류
+            // 5. 뒤를 보는 체류
             // ========================================
 
             float lookBackTime =
@@ -327,7 +322,6 @@ public class EnemyTurnSystem : MonoBehaviour
                 );
 
 
-            // 회전 완료 후 빨간 Spot Light 유지
             SetRedSpotLight();
 
 
@@ -337,7 +331,7 @@ public class EnemyTurnSystem : MonoBehaviour
 
 
             // ========================================
-            // 6. Return 시간 결정
+            // 6. Return
             // ========================================
 
             currentReturnTime =
@@ -349,7 +343,6 @@ public class EnemyTurnSystem : MonoBehaviour
             currentReturnElapsedTime = 0f;
 
 
-            // Return Animation
             if (animationSystem != null)
             {
                 animationSystem.PlayReturn(
@@ -358,8 +351,14 @@ public class EnemyTurnSystem : MonoBehaviour
             }
 
 
-            // Return 시작과 동시에
-            // 정면 초록 Spot Light ON
+            // Return 시작음
+            if (soundManager != null)
+            {
+                soundManager.PlayReturnSound();
+            }
+
+
+            // Return 시작 = 정면 초록
             SetFrontSpotLight();
 
 
@@ -412,10 +411,6 @@ public class EnemyTurnSystem : MonoBehaviour
 
         while (true)
         {
-            // ----------------------------------------
-            // 진행 시간
-            // ----------------------------------------
-
             if (isReturning)
             {
                 currentReturnElapsedTime +=
@@ -434,19 +429,11 @@ public class EnemyTurnSystem : MonoBehaviour
                 : currentTurnElapsedTime;
 
 
-            // ----------------------------------------
-            // 진행률
-            // ----------------------------------------
-
             float progress =
                 Mathf.Clamp01(
                     elapsedTime / duration
                 );
 
-
-            // ----------------------------------------
-            // 실제 Enemy 회전
-            // ----------------------------------------
 
             transform.rotation =
                 Quaternion.Slerp(
@@ -456,9 +443,9 @@ public class EnemyTurnSystem : MonoBehaviour
                 );
 
 
-            // ----------------------------------------
-            // Turn 중 Spot Light
-            // ----------------------------------------
+            // ========================================
+            // Turn
+            // ========================================
 
             if (!isReturning)
             {
@@ -475,14 +462,10 @@ public class EnemyTurnSystem : MonoBehaviour
             }
             else
             {
-                // Return 중에는 정면 초록 유지
+                // Return 중 정면 초록
                 SetFrontSpotLight();
             }
 
-
-            // ----------------------------------------
-            // 회전 완료
-            // ----------------------------------------
 
             if (progress >= 1f)
             {
@@ -494,23 +477,16 @@ public class EnemyTurnSystem : MonoBehaviour
         }
 
 
-        // 정확한 최종 방향
         transform.rotation =
             targetRotation;
 
 
-        // ----------------------------------------
-        // 회전 완료 후 Spot Light
-        // ----------------------------------------
-
         if (isReturning)
         {
-            // 복귀 완료 → 정면 초록
             SetFrontSpotLight();
         }
         else
         {
-            // 180° 회전 완료 → 빨강
             SetRedSpotLight();
         }
     }
@@ -522,7 +498,6 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void SetFrontSpotLight()
     {
-        // 정면 초록 ON
         if (frontSpotLight != null)
         {
             frontSpotLight.enabled = true;
@@ -531,7 +506,6 @@ public class EnemyTurnSystem : MonoBehaviour
         }
 
 
-        // 나머지 OFF
         if (left90SpotLight != null)
         {
             left90SpotLight.enabled = false;
@@ -551,14 +525,12 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void SetLeft90SpotLight()
     {
-        // 정면 OFF
         if (frontSpotLight != null)
         {
             frontSpotLight.enabled = false;
         }
 
 
-        // 왼쪽 90° 노랑 ON
         if (left90SpotLight != null)
         {
             left90SpotLight.enabled = true;
@@ -567,7 +539,6 @@ public class EnemyTurnSystem : MonoBehaviour
         }
 
 
-        // 빨강 OFF
         if (redSpotLight != null)
         {
             redSpotLight.enabled = false;
@@ -581,21 +552,18 @@ public class EnemyTurnSystem : MonoBehaviour
 
     private void SetRedSpotLight()
     {
-        // 정면 OFF
         if (frontSpotLight != null)
         {
             frontSpotLight.enabled = false;
         }
 
 
-        // 왼쪽 90° OFF
         if (left90SpotLight != null)
         {
             left90SpotLight.enabled = false;
         }
 
 
-        // 빨강 ON
         if (redSpotLight != null)
         {
             redSpotLight.enabled = true;

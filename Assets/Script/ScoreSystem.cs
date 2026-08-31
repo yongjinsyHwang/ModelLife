@@ -8,10 +8,8 @@ public class ScoreSystem : MonoBehaviour
     // 기본 점수
     // ==============================
 
-    // 일정 시간마다 증가하는 점수
     [SerializeField] private int passiveScoreAmount = 1;
 
-    // 기본 점수 획득 간격
     [SerializeField] private float passiveScoreInterval = 1f;
 
 
@@ -19,10 +17,8 @@ public class ScoreSystem : MonoBehaviour
     // Interaction 점수
     // ==============================
 
-    // Interaction 중 일정 시간마다 증가하는 점수
     [SerializeField] private int interactionScoreAmount = 10;
 
-    // Interaction 점수 획득 간격
     [SerializeField] private float interactionScoreInterval = 1f;
 
 
@@ -52,7 +48,7 @@ public class ScoreSystem : MonoBehaviour
 
 
     // ==============================
-    // 기본 점수 Coroutine
+    // Coroutine
     // ==============================
 
     private Coroutine passiveScoreRoutine;
@@ -64,14 +60,12 @@ public class ScoreSystem : MonoBehaviour
 
     private void Start()
     {
-        // 기본 점수 증가 시작
         passiveScoreRoutine =
             StartCoroutine(
                 PassiveScoreRoutine()
             );
 
 
-        // 시작 시 UI
         UpdateScoreUI();
     }
 
@@ -84,13 +78,11 @@ public class ScoreSystem : MonoBehaviour
     {
         while (true)
         {
-            // 점수 증가 간격 대기
             yield return new WaitForSeconds(
                 passiveScoreInterval
             );
 
 
-            // 게임 종료 후에는 증가하지 않는다.
             if (IsGameFinished())
             {
                 yield break;
@@ -110,8 +102,6 @@ public class ScoreSystem : MonoBehaviour
 
     public void AddScore(int amount)
     {
-        // Game Over / Game Clear 이후에는
-        // 점수를 증가시키지 않는다.
         if (IsGameFinished())
         {
             return;
@@ -202,7 +192,7 @@ public class ScoreSystem : MonoBehaviour
 
 
     // ==============================
-    // 목표 달성 여부
+    // 목표 달성
     // ==============================
 
     public bool HasReachedTargetScore()
@@ -212,7 +202,7 @@ public class ScoreSystem : MonoBehaviour
 
 
     // ==============================
-    // Interaction 점수 간격
+    // Interaction 간격
     // ==============================
 
     public float GetInteractionScoreInterval()
@@ -222,7 +212,7 @@ public class ScoreSystem : MonoBehaviour
 
 
     // ==============================
-    // 게임 종료 여부
+    // 게임 종료 확인
     // ==============================
 
     private bool IsGameFinished()

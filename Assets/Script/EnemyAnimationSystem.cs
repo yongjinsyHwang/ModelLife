@@ -13,10 +13,8 @@ public class EnemyAnimationSystem : MonoBehaviour
     // Animation Clip
     // ========================================
 
-    // Turn 애니메이션 길이 계산용
     [SerializeField] private AnimationClip turnAnimation;
 
-    // Return 애니메이션 길이 계산용
     [SerializeField] private AnimationClip returnAnimation;
 
 
@@ -58,19 +56,9 @@ public class EnemyAnimationSystem : MonoBehaviour
 
     public void PlayTurn(float turnDuration)
     {
-        if (animator == null)
-        {
-            return;
-        }
-
-
-        if (turnAnimation == null)
-        {
-            return;
-        }
-
-
-        if (turnDuration <= 0f)
+        if (animator == null ||
+            turnAnimation == null ||
+            turnDuration <= 0f)
         {
             return;
         }
@@ -100,19 +88,9 @@ public class EnemyAnimationSystem : MonoBehaviour
 
     public void PlayReturn(float returnDuration)
     {
-        if (animator == null)
-        {
-            return;
-        }
-
-
-        if (returnAnimation == null)
-        {
-            return;
-        }
-
-
-        if (returnDuration <= 0f)
+        if (animator == null ||
+            returnAnimation == null ||
+            returnDuration <= 0f)
         {
             return;
         }
@@ -137,7 +115,7 @@ public class EnemyAnimationSystem : MonoBehaviour
 
 
     // ========================================
-    // Animator Speed Reset
+    // Animation Speed Reset
     // ========================================
 
     public void ResetAnimationSpeed()
